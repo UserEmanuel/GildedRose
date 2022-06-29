@@ -10,6 +10,13 @@ export class Item {
   }
 }
 
+export enum ItemType {
+  Sulfuras = 'Sulfuras, Hand of Ragnaros',
+  BackstagePass = 'Backstage passes to a TAFKAL80ETC concert',
+  AgedBrie = 'Aged Brie',
+  ConjuredItem = 'Conjured',
+}
+
 export class GildedRose {
   items: Array<Item>;
 
@@ -17,53 +24,70 @@ export class GildedRose {
     this.items = items;
   }
 
-  updateQuality() {
-    for (let i = 0; i < this.items.length; i++) {
-      if (this.items[i].name != 'Aged Brie' && this.items[i].name != 'Backstage passes to a TAFKAL80ETC concert') {
-        if (this.items[i].quality > 0) {
-          if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-            this.items[i].quality = this.items[i].quality - 1
-          }
-        }
-      } else {
-        if (this.items[i].quality < 50) {
-          this.items[i].quality = this.items[i].quality + 1
-          if (this.items[i].name == 'Backstage passes to a TAFKAL80ETC concert') {
-            if (this.items[i].sellIn < 11) {
-              if (this.items[i].quality < 50) {
-                this.items[i].quality = this.items[i].quality + 1
-              }
-            }
-            if (this.items[i].sellIn < 6) {
-              if (this.items[i].quality < 50) {
-                this.items[i].quality = this.items[i].quality + 1
-              }
-            }
-          }
-        }
-      }
-      if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-        this.items[i].sellIn = this.items[i].sellIn - 1;
-      }
-      if (this.items[i].sellIn < 0) {
-        if (this.items[i].name != 'Aged Brie') {
-          if (this.items[i].name != 'Backstage passes to a TAFKAL80ETC concert') {
-            if (this.items[i].quality > 0) {
-              if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-                this.items[i].quality = this.items[i].quality - 1
-              }
-            }
-          } else {
-            this.items[i].quality = this.items[i].quality - this.items[i].quality
-          }
-        } else {
-          if (this.items[i].quality < 50) {
-            this.items[i].quality = this.items[i].quality + 1
-          }
-        }
-      }
-    }
+  private static updateSulfuras(item: Item) {
+    // do nothing
+  }
 
+  private static updateBackstagePass(item: Item) {
+    if (10 <= item.sellIn)
+      item.quality += 1;
+    else if (5 <= item.sellIn && item.sellIn < 10)
+      item.quality += 2;
+    else if (0 <= item.sellIn && item.sellIn < 5)
+      item.quality += 3;
+    else
+      item.quality = 0;
+  }
+
+  private static updateAgedBrie(item: Item) {
+    ++item.quality;
+    if (item.sellIn < 0)
+      ++item.quality;
+  }
+
+  private static updateConjuredItem(item: Item) {
+    item.quality -= 2;
+    if (item.sellIn < 0)
+      item.quality -= 2;
+  }
+
+  private static updateRegularItem(item: Item) {
+    --item.quality;
+    if (item.sellIn < 0)
+      --item.quality;
+  }
+
+  private static reboundQuality(item: Item) {
+    if (item.quality < 0)
+      item.quality = 0;
+    if (item.quality > 50)
+      item.quality = 50;
+  }
+
+  private updateItemQuality(item: Item) {
+    --item.sellIn;
+    switch (item.name) {
+      case ItemType.Sulfuras:
+        GildedRose.updateSulfuras(item);
+        break;
+      case ItemType.BackstagePass:
+        GildedRose.updateBackstagePass(item);
+        break;
+      case ItemType.AgedBrie:
+        GildedRose.updateAgedBrie(item);
+        break;
+      case ItemType.ConjuredItem:
+        GildedRose.updateConjuredItem(item);
+        break;
+      default:
+        GildedRose.updateRegularItem(item);
+    }
+    GildedRose.reboundQuality(item);
+  }
+
+  updateQuality() {
+    for (let i = 0; i < this.items.length; i++)
+      this.updateItemQuality(this.items[i]);
     return this.items;
   }
 }
